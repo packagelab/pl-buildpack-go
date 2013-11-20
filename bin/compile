@@ -112,7 +112,7 @@ installpath="$tempdir"/usr/bin
 
 mkdir -p -m 0755 "$controldir"
 cat <<EOT >"$controldir"/control
-Package: $name
+Package: $(basename $name)
 Version: $version
 Architecture: amd64
 Section: packagelab
