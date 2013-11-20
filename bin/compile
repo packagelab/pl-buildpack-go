@@ -27,9 +27,22 @@ esac
 build="$1"
 cache="$2"
 json_get=$(dirname $0)/json-get
+arch=$(uname -m | tr A-Z a-z)
+case "$arch" in
+  x86_64) arch=amd64;;
+esac
+plat=$(uname | tr A-Z a-z)-$arch
 
-# unset git dir or it will mess with goinstall
-unset GIT_DIR
+if test ! -f $cache/$plat/bin/godep
+then
+  echo "-----> Downloading godep"
+  mkdir -p $cache/$plat/bin
+  rm -f $cache/$plat/bin/godep.new
+  curl -fsSL https://s3.amazonaws.com/cb-misc/$plat/bin/godep > $cache/$plat/bin/godep.new
+  chmod 755 $cache/$plat/bin/godep.new
+  mv $cache/$plat/bin/godep.new $cache/$plat/bin/godep
+fi
+PATH=$cache/$plat/bin:$PATH
 
 if test -f $build/Godeps
 then
