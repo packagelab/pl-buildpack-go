@@ -123,6 +123,6 @@ EOT
 mkdir -p "$installpath"
 mv "$GOPATH"/bin/* "$installpath"
 cd $build >/dev/null 2>&1
-fakeroot dpkg-deb --build "$tempdir" .
+fakeroot dpkg-deb --build "$tempdir" . 2>&1 | indent
 cd - >/dev/null 2>&1
 rm -rf "$tempdir" $build/.heroku
