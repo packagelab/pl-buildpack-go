@@ -104,6 +104,17 @@ else
   go get -tags heroku ./...
 fi
 
+mkdir -p $build/bin
+mv $GOPATH/bin/* $build/bin
+rm -rf $build/.heroku
+
+if [ -f $build/scripts/post_compile ]
+then
+  echo "-----> Running post-compile hook"
+  chmod +x $build/scripts/post_compile
+  $build/scripts/post_compile
+fi
+
 echo "-----> Building package"
 version=$(git describe --tags | sed -e 's/^v//' -e "s/-/+$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
 tempdir=$(mktemp -d)
@@ -121,8 +132,8 @@ Priority: optional
 Description: $name
 EOT
 mkdir -p "$installpath"
-mv "$GOPATH"/bin/* "$installpath"
+mv "$build"/bin/* "$installpath"
 cd $build >/dev/null 2>&1
 fakeroot dpkg-deb --build "$tempdir" . 2>&1 | indent
 cd - >/dev/null 2>&1
-rm -rf "$tempdir" $build/.heroku
+rm -rf "$tempdir"
