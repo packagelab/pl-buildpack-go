@@ -110,7 +110,7 @@ rm -rf $build/.heroku
 
 if [ -f $build/scripts/post_compile ]
 then
-  echo "-----> Running post-compile hook"
+  echo "-----> Running: scripts/post_compile"
   chmod +x $build/scripts/post_compile
   cd $build >/dev/null 2>&1
   $build/scripts/post_compile
