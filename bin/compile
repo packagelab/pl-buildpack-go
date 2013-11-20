@@ -27,6 +27,7 @@ esac
 build="$1"
 cache="$2"
 json_get=$(dirname $0)/json-get
+semver=$(dirname $0)/semver
 arch=$(uname -m | tr A-Z a-z)
 case "$arch" in
   x86_64) arch=amd64;;
@@ -116,8 +117,25 @@ then
   $build/scripts/post_compile
 fi
 
+cd $build >/dev/null 2>&1
+if [ -f $build/scripts/get_version ]
+then
+  echo "-----> Running: scripts/get_version"
+  chmod +x $build/scripts/get_version
+  version_parsed=$($build/scripts/get_version)
+  echo "       Got: $version_parsed"
+  version_git=$(git describe --tags | sed -e 's/^v//' -e 's/-.*//')
+  if $semver $version_parsed $version_git
+  then
+    version=$(git describe --tags | sed -e "s/^v[^-]*-/$version_parsed~$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
+  else
+    version=$(git describe --tags | sed -e 's/^v//' -e "s/-/+$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
+  fi
+else
+  version=$(git describe --tags | sed -e 's/^v//' -e "s/-/+$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
+fi
+
 echo "-----> Building package"
-version=$(git describe --tags | sed -e 's/^v//' -e "s/-/+$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
 tempdir=$(mktemp -d)
 controldir="$tempdir"/DEBIAN
 installpath="$tempdir"/usr/bin
