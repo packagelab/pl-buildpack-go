@@ -115,11 +115,14 @@ cat <<EOT >"$controldir"/control
 Package: $(basename $name)
 Version: $version
 Architecture: amd64
+Maintainer: "Package Lab" <maintainer@packagelab.com>
 Section: packagelab
 Priority: optional
 Description: $name
 EOT
 mkdir -p "$installpath"
 mv "$GOPATH"/bin/* "$installpath"
+cd $build >/dev/null 2>&1
 fakeroot dpkg-deb --build "$tempdir" .
+cd - >/dev/null 2>&1
 rm -rf "$tempdir" $build/.heroku
