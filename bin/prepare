@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# fail fast
+set -o errexit
+set -o nounset
+set -o pipefail
+
+scriptname=$(basename $0)
+
+cat <<EOT
+bzr
+fakeroot
+mercurial
+python-virtualenv
+EOT

@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# fail fast
+set -o errexit
+set -o nounset
+set -o pipefail
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+scriptname=$(basename $0)
+case $# in
+  2) :;;
+  *) echo "$scriptname: usage: $scriptname BUILD_DIR CACHE_DIR" >&2; exit 2;;
+esac
+
+build="$1"
+cache="$2"
+json_get=$(dirname $0)/json-get
+
+# unset git dir or it will mess with goinstall
+unset GIT_DIR
+
+if test -f $build/Godeps
+then
+  name=$(<$build/Godeps $json_get ImportPath)
+  ver=$(<$build/Godeps $json_get GoVersion)
+elif test -d $build/Godeps
+then
+  name=$(<$build/Godeps/Godeps.json $json_get ImportPath)
+  ver=$(<$build/Godeps/Godeps.json $json_get GoVersion)
+elif test -f $build/.godir
+then
+  name=$(cat $build/.godir)
+  ver=go${GOVERSION:-1.1.2}
+else
+  echo >&2 " !     A .godir is required. For instructions:"
+  echo >&2 " !     http://mmcgrana.github.io/2012/09/getting-started-with-go-on-heroku"
+  exit 1
+fi
+
+file=${GOFILE:-$ver.$(uname|tr A-Z a-z)-amd64$(platext $ver).tar.gz}
+url=${GOURL:-http://go.googlecode.com/files/$file}
+
+if test -e $build/bin && ! test -d $build/bin
+then
+  echo >&2 " !     File bin exists and is not a directory."
+  exit 1
+fi
+
+if test -d $cache/$ver/go
+then
+  echo "-----> Using $ver"
+else
+  rm -rf $cache/* # be sure not to build up cruft
+  mkdir -p $cache/$ver
+  cd $cache/$ver
+  echo -n "-----> Installing $ver..."
+  curl -fsSLO $url
+  tar -zxf $file
+  rm -f $file
+  echo " done"
+fi
+
+GOROOT=$cache/$ver/go export GOROOT
+GOPATH=$build/.heroku/g export GOPATH
+PATH=$GOROOT/bin:$PATH
+
+p=$GOPATH/src/$name
+mkdir -p $p
+cp -R $build/* $p
+
+unset GIT_DIR # unset git dir or it will mess with goinstall
+cd $p
+if test -e $build/Godeps
+then
+  echo "-----> Running: godep go install -tags heroku ./..."
+  godep go install -tags heroku ./...
+else
+  echo "-----> Running: go get -tags heroku ./..."
+  go get -tags heroku ./...
+fi
+
+echo "-----> Building package"
+version=$(git describe --tags | sed -e 's/^v//' -e "s/-/+$(date +%Y%m%d%H%M%S)./" -e 's/-/./g')-1
+tempdir=$(mktemp -d)
+controldir="$tempdir"/DEBIAN
+installpath="$tempdir"/usr/bin
+
+mkdir -p -m 0755 "$controldir"
+cat <<EOT >"$controldir"/control
+Package: $name
+Version: $version
+Architecture: amd64
+Section: packagelab
+Priority: optional
+Description: $name
+EOT
+mkdir -p "$installpath"
+mv "$GOPATH"/bin/* "$installpath"
+fakeroot dpkg-deb --build "$tempdir" .
+rm -rf "$tempdir" $build/.heroku
