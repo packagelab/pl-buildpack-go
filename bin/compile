@@ -90,6 +90,14 @@ GOROOT=$cache/$ver/go export GOROOT
 GOPATH=$build/.heroku/g export GOPATH
 PATH=$GOROOT/bin:$PATH
 
+cd $build >/dev/null 2>&1
+if [ -f $build/scripts/pre_compile ]
+then
+  echo "-----> Running: scripts/pre_compile"
+  chmod +x $build/scripts/pre_compile
+  $build/scripts/pre_compile
+fi
+
 p=$GOPATH/src/$name
 mkdir -p $p
 cp -R $build/* $p
