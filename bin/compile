@@ -112,6 +112,7 @@ cd $p
 if test -e $build/Godeps
 then
   echo "-----> Running: godep go install -tags heroku ./..."
+  echo $PATH
   godep go install -tags heroku ./...
 else
   echo "-----> Running: go get -tags heroku ./..."
