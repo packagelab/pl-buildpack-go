@@ -81,7 +81,7 @@ if test -d $cache/$ver/go
 then
   echo "-----> Using $ver"
 else
-  rm -rf $cache/* # be sure not to build up cruft
+  rm -rf $cache/go[0-9.]* # be sure not to build up cruft
   mkdir -p $cache/$ver
   cd $cache/$ver
   echo -n "-----> Installing $ver..."
@@ -112,7 +112,6 @@ cd $p
 if test -e $build/Godeps
 then
   echo "-----> Running: godep go install -tags heroku ./..."
-  echo $PATH
   godep go install -tags heroku ./...
 else
   echo "-----> Running: go get -tags heroku ./..."
