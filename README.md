@@ -1,9 +1,11 @@
 # Buildpack for Go packages
 
-This is a [Heroku buildpack][buildpack] for creating `deb` and `rpm`
-packages for [Go][go] projects. It is intended for use with
-[Cherrybuild][cherrybuild].
+This is a [buildpack][buildpack] for creating [deb][deb] and
+[rpm][RPM] packages for [Go][go] projects with the [Package
+Lab][packagelab] build service.
 
-[buildpack]: http://devcenter.heroku.com/articles/buildpacks
+[buildpack]: https://packagelab.com/docs/buildpacks
+[deb]: https://wiki.debian.org/Packaging
 [go]: http://golang.org/
-[cherrybuild]: https://cherrybuild.com
+[packagelab]: https://packagelab.com/
+[rpm]: http://www.rpm.org/
