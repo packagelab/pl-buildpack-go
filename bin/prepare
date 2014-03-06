@@ -8,8 +8,10 @@ set -o pipefail
 scriptname=$(basename $0)
 
 cat <<EOT
-bzr
-fakeroot
-mercurial
-python-virtualenv
+---
+packages:
+  - bzr
+  - fakeroot
+  - mercurial
+  - python-virtualenv
 EOT
