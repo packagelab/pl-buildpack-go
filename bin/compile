@@ -26,6 +26,7 @@ esac
 
 build="$1"
 cache="$2"
+default_go_version=1.2.1
 json_get=$(dirname $0)/json-get
 semver=$(dirname $0)/semver
 arch=$(uname -m | tr A-Z a-z)
@@ -60,7 +61,7 @@ then
   then
     ver=$(<$build/.goversion)
   else
-    ver=go${GOVERSION:-1.1.2}
+    ver=go${GOVERSION:-$default_go_version}
   fi
 else
   echo >&2 " !     A .godir is required. For instructions:"
