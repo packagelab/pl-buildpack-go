@@ -92,9 +92,9 @@ else
   echo " done"
 fi
 
-GOROOT=$cache/$ver/go export GOROOT
-GOPATH=$build/.heroku/g export GOPATH
-PATH=$GOROOT/bin:$PATH
+export GOROOT=$cache/$ver/go
+export GOPATH=$build/.heroku/g
+export PATH=$GOROOT/bin:$PATH
 
 cd $build >/dev/null 2>&1
 if [ -f $build/scripts/pre_compile ]
