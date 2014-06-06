@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-import json
-import sys
-
-d = json.load(sys.stdin)
-print d[sys.argv[1]]

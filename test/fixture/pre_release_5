@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# fail fast
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# globals
+readonly PROGNAME=$(basename $0)
+readonly PROGDIR=$(dirname $0)
+readonly ARGS="$@"
+
+main() {
+  local build_dir="$1"
+
+  cat <<EOT >$build_dir/version.go
+  package foo
+
+  const Version = "0.4.0"
+EOT
+
+  cd "$build_dir" >/dev/null 2>&1
+  git init >/dev/null 2>&1
+  git add version.go >/dev/null 2>&1
+  git commit -m 'Initial commit' >/dev/null 2>&1
+  git tag v0.4.0.beta.3
+  cd - >/dev/null 2>&1
+}
+
+main "$@"

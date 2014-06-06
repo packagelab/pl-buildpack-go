@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# fail fast
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# globals
+readonly PROGNAME=$(basename $0)
+readonly PROGDIR=$(dirname $0)
+readonly ARGS="$@"
+
+main() {
+  local build_dir="$1"
+
+  cat <<EOT >$build_dir/version.go
+  package foo
+
+  const Version = "0.4.0"
+EOT
+}
+
+main "$@"
