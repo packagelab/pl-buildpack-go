@@ -46,12 +46,37 @@ test_get_version_stable_release_3() {
     assertEquals 0.4.0-1 "$result"
 }
 
+# file_version:
+# tag: v0.4.0
+# old_tag:
+# result: 0.4.0-1
+test_get_version_stable_release_4() {
+    result=$(run_fixture stable_release_4)
+    assertEquals 0.4.0-1 "$result"
+}
+
 # file_version: v0.4.0
 # tag:
 # old_tag: v0.4.0
 # result: 0.4.0+20140605182630.git.dce2afc-1
 test_get_version_post_release_1() {
     result=$(run_fixture post_release_1)
+    case "$result" in
+        0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+            assertEquals 1 1
+            ;;
+        *)
+            assertEquals 1 0
+            ;;
+    esac
+}
+
+# file_version:
+# tag:
+# old_tag: v0.4.0
+# result: 0.4.0+20140605182630.git.dce2afc-1
+test_get_version_post_release_2() {
+    result=$(run_fixture post_release_2)
     case "$result" in
         0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
             assertEquals 1 1
