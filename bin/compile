@@ -13,171 +13,171 @@ readonly ARGS="$@"
 . "$PROGDIR"/../lib/helpers
 
 usage() {
-    echo "$PROGNAME: usage: $PROGNAME BUILD_DIR CACHE_DIR"
+  echo "$PROGNAME: usage: $PROGNAME BUILD_DIR CACHE_DIR"
 }
 
 install_tool() {
-    local cache="$1"
-    local plat="$2"
-    local name="$3"
+  local cache="$1"
+  local plat="$2"
+  local name="$3"
 
-    if test ! -f $cache/$plat/bin/$name
-    then
-        echo "-----> Downloading $name"
-        mkdir -p $cache/$plat/bin
-        rm -f $cache/$plat/bin/$name.new
-        curl -fsSL https://s3.amazonaws.com/cb-misc/$plat/bin/$name > $cache/$plat/bin/$name.new
-        chmod 755 $cache/$plat/bin/$name.new
-        mv $cache/$plat/bin/$name.new $cache/$plat/bin/$name
-    fi
+  if test ! -f $cache/$plat/bin/$name
+  then
+    echo "-----> Downloading $name"
+    mkdir -p $cache/$plat/bin
+    rm -f $cache/$plat/bin/$name.new
+    curl -fsSL https://s3.amazonaws.com/cb-misc/$plat/bin/$name > $cache/$plat/bin/$name.new
+    chmod 755 $cache/$plat/bin/$name.new
+    mv $cache/$plat/bin/$name.new $cache/$plat/bin/$name
+  fi
 }
 
 install_go() {
-    local cache="$1"
-    local ver="$2"
-    local file=${GOFILE:-$ver.$(uname|tr A-Z a-z)-amd64$(platext $ver).tar.gz}
-    local url=${GOURL:-$(urlfor $ver $file)}
+  local cache="$1"
+  local ver="$2"
+  local file=${GOFILE:-$ver.$(uname|tr A-Z a-z)-amd64$(platext $ver).tar.gz}
+  local url=${GOURL:-$(urlfor $ver $file)}
 
-    if test -d $cache/$ver/go
-    then
-        echo "-----> Using $ver"
-    else
-        rm -rf $cache/go[0-9.]* # be sure not to build up cruft
-        mkdir -p $cache/$ver
-        cd $cache/$ver
-        echo "-----> Installing $ver"
-        curl -fsSLO $url
-        tar -zxf $file
-        rm -f $file
-    fi
+  if test -d $cache/$ver/go
+  then
+    echo "-----> Using $ver"
+  else
+    rm -rf $cache/go[0-9.]* # be sure not to build up cruft
+    mkdir -p $cache/$ver
+    cd $cache/$ver
+    echo "-----> Installing $ver"
+    curl -fsSLO $url
+    tar -zxf $file
+    rm -f $file
+  fi
 }
 
 main() {
-    case $# in
-        2) :;;
-        *) usage >&2; exit 2;;
-    esac
+  case $# in
+    2) :;;
+    *) usage >&2; exit 2;;
+  esac
 
-    local build="$1"
-    local cache="$2"
-    local semver=$(dirname $0)/semver
-    local arch=$(uname -m | tr A-Z a-z)
-    local plat
-    local name
-    local ver
-    local p
+  local build="$1"
+  local cache="$2"
+  local semver=$(dirname $0)/semver
+  local arch=$(uname -m | tr A-Z a-z)
+  local plat
+  local name
+  local ver
+  local p
 
-    case "$build" in
-        /*) :;;
-        *)
-            echo "!      BUILD_DIR must be an absolute path"
-            exit 2
-            ;;
-    esac
+  case "$build" in
+    /*) :;;
+    *)
+      echo "!      BUILD_DIR must be an absolute path"
+      exit 2
+      ;;
+  esac
+  
+  case "$arch" in
+    x86_64) arch=amd64;;
+  esac
+  plat=$(uname | tr A-Z a-z)-$arch
 
-    case "$arch" in
-        x86_64) arch=amd64;;
-    esac
-    plat=$(uname | tr A-Z a-z)-$arch
+  install_tool "$cache" "$plat" godep
+  install_tool "$cache" "$plat" jq
 
-    install_tool "$cache" "$plat" godep
-    install_tool "$cache" "$plat" jq
+  export PATH=$cache/$plat/bin:$PATH
 
-    export PATH=$cache/$plat/bin:$PATH
-
-    if test -f $build/Godeps
+  if test -f $build/Godeps
+  then
+    name=$(<$build/Godeps jq -r .ImportPath)
+    ver=$(<$build/Godeps jq -r .GoVersion)
+  elif test -d $build/Godeps
+  then
+    name=$(<$build/Godeps/Godeps.json jq -r .ImportPath)
+    ver=$(<$build/Godeps/Godeps.json jq -r .GoVersion)
+  elif test -f $build/Gomfile
+  then
+    # XXX: Hack to get the name from the man page
+    name=$(basename $(basename man/*.1 .1))
+    ver=go${GOVERSION:-1.2.2}
+  elif test -f $build/.godir
+  then
+    name=$(cat $build/.godir)
+    if [ -f $build/.goversion ]
     then
-        name=$(<$build/Godeps jq -r .ImportPath)
-        ver=$(<$build/Godeps jq -r .GoVersion)
-    elif test -d $build/Godeps
-    then
-        name=$(<$build/Godeps/Godeps.json jq -r .ImportPath)
-        ver=$(<$build/Godeps/Godeps.json jq -r .GoVersion)
-    elif test -f $build/Gomfile
-    then
-        # XXX: Hack to get the name from the man page
-        name=$(basename $(basename man/*.1 .1))
-        ver=go${GOVERSION:-1.2.2}
-    elif test -f $build/.godir
-    then
-        name=$(cat $build/.godir)
-        if [ -f $build/.goversion ]
-        then
-            ver=$(<$build/.goversion)
-        else
-            ver=go${GOVERSION:-1.2.2}
-        fi
+      ver=$(<$build/.goversion)
     else
-        echo >&2 " !     A .godir is required. For instructions:"
-        echo >&2 " !     http://mmcgrana.github.io/2012/09/getting-started-with-go-on-heroku"
-        exit 1
+      ver=go${GOVERSION:-1.2.2}
     fi
+  else
+    echo >&2 " !     A .godir is required. For instructions:"
+    echo >&2 " !     http://mmcgrana.github.io/2012/09/getting-started-with-go-on-heroku"
+    exit 1
+  fi
 
-    if test -e $build/bin && ! test -d $build/bin
-    then
-        echo >&2 " !     File bin exists and is not a directory."
-        exit 1
-    fi
+  if test -e $build/bin && ! test -d $build/bin
+  then
+    echo >&2 " !     File bin exists and is not a directory."
+    exit 1
+  fi
 
-    install_go "$cache" "$ver"
+  install_go "$cache" "$ver"
 
-    export GOROOT=$cache/$ver/go
-    export GOPATH=$build/.heroku/g
-    export PATH=$GOROOT/bin:$PATH
+  export GOROOT=$cache/$ver/go
+  export GOPATH=$build/.heroku/g
+  export PATH=$GOROOT/bin:$PATH
 
-    cd $build >/dev/null 2>&1
-    if [ -f $build/scripts/pre_compile ]
-    then
-        echo "-----> Running: scripts/pre_compile"
-        chmod +x $build/scripts/pre_compile
-        $build/scripts/pre_compile
-    fi
+  cd $build >/dev/null 2>&1
+  if [ -f $build/scripts/pre_compile ]
+  then
+    echo "-----> Running: scripts/pre_compile"
+    chmod +x $build/scripts/pre_compile
+    $build/scripts/pre_compile
+  fi
 
-    p=$GOPATH/src/$name
-    mkdir -p $p
-    cp -R $build/* $p
+  p=$GOPATH/src/$name
+  mkdir -p $p
+  cp -R $build/* $p
 
-    unset GIT_DIR # unset git dir or it will mess with goinstall
-    cd $p
-    if test -e $build/Godeps
-    then
-        echo "-----> Running: godep go install -tags heroku ./..."
-        godep go install -tags heroku ./... 2>&1 | indent
-    elif test -e $build/Gomfile
-    then
-        echo "-----> Running: gom -production install"
-        gom -production install 2>&1 | indent
-        echo "       Running: gom build"
-        gom build 2>&1 | indent
-    else
-        echo "-----> Running: go get -tags heroku ./..."
-        go get -tags heroku ./... 2>&1 | indent
-    fi
+  unset GIT_DIR # unset git dir or it will mess with goinstall
+  cd $p
+  if test -e $build/Godeps
+  then
+    echo "-----> Running: godep go install -tags heroku ./..."
+    godep go install -tags heroku ./... 2>&1 | indent
+  elif test -e $build/Gomfile
+  then
+    echo "-----> Running: gom -production install"
+    gom -production install 2>&1 | indent
+    echo "       Running: gom build"
+    gom build 2>&1 | indent
+  else
+    echo "-----> Running: go get -tags heroku ./..."
+    go get -tags heroku ./... 2>&1 | indent
+  fi
 
-    mkdir -p $build/bin
-    mv $GOPATH/bin/* $build/bin
-    rm -rf $build/.heroku
+  mkdir -p $build/bin
+  mv $GOPATH/bin/* $build/bin
+  rm -rf $build/.heroku
 
-    cd $build >/dev/null 2>&1
-    if [ -f $build/scripts/post_compile ]
-    then
-        echo "-----> Running: scripts/post_compile"
-        chmod +x $build/scripts/post_compile
-        $build/scripts/post_compile
-    fi
+  cd $build >/dev/null 2>&1
+  if [ -f $build/scripts/post_compile ]
+  then
+    echo "-----> Running: scripts/post_compile"
+    chmod +x $build/scripts/post_compile
+    $build/scripts/post_compile
+  fi
 
-    cd $build >/dev/null 2>&1
+  cd $build >/dev/null 2>&1
 
-    version=$(get_version "$build")
-    echo "-----> Using package version: $version"
+  version=$(get_version "$build")
+  echo "-----> Using package version: $version"
 
-    echo "-----> Building package"
-    tempdir=$(mktemp -d -t heroku.XXXXXX)
-    controldir="$tempdir"/DEBIAN
-    installpath="$tempdir"/usr/bin
+  echo "-----> Building package"
+  tempdir=$(mktemp -d -t heroku.XXXXXX)
+  controldir="$tempdir"/DEBIAN
+  installpath="$tempdir"/usr/bin
 
-    mkdir -p -m 0755 "$controldir"
-    cat <<EOT >"$controldir"/control
+  mkdir -p -m 0755 "$controldir"
+  cat <<EOT >"$controldir"/control
 Package: $(basename $name)
 Version: $version
 Architecture: amd64
@@ -186,10 +186,10 @@ Section: packagelab
 Priority: optional
 Description: $name
 EOT
-    mkdir -p "$installpath"
-    mv "$build"/bin/* "$installpath"
-    fakeroot dpkg-deb --build "$tempdir" . 2>&1 | indent
-    rm -rf "$tempdir"
+  mkdir -p "$installpath"
+  mv "$build"/bin/* "$installpath"
+  fakeroot dpkg-deb --build "$tempdir" . 2>&1 | indent
+  rm -rf "$tempdir"
 }
 
 main "$@"

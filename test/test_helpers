@@ -11,12 +11,12 @@ readonly PROGDIR=$(dirname $0)
 readonly ARGS="$@"
 
 run_fixture() {
-    local fixture="$1"
-    local build_dir=$(mktemp -d -t test)
+  local fixture="$1"
+  local build_dir=$(mktemp -d -t test)
 
-    trap "rm -rf $build_dir" EXIT
-    "$PROGDIR"/fixture/"$fixture" "$build_dir"
-    get_version "$build_dir"
+  trap "rm -rf $build_dir" EXIT
+  "$PROGDIR"/fixture/"$fixture" "$build_dir"
+  get_version "$build_dir"
 }
 
 # file_version: v0.4.0
@@ -24,8 +24,8 @@ run_fixture() {
 # old_tag:
 # result: 0.4.0-1
 test_get_version_stable_release_1() {
-    result=$(run_fixture stable_release_1)
-    assertEquals 0.4.0-1 "$result"
+  result=$(run_fixture stable_release_1)
+  assertEquals 0.4.0-1 "$result"
 }
 
 # file_version: v0.4.0
@@ -33,8 +33,8 @@ test_get_version_stable_release_1() {
 # old_tag:
 # result: 0.4.0-1
 test_get_version_stable_release_2() {
-    result=$(run_fixture stable_release_2)
-    assertEquals 0.4.0-1 "$result"
+  result=$(run_fixture stable_release_2)
+  assertEquals 0.4.0-1 "$result"
 }
 
 # file_version: v0.4.0
@@ -42,8 +42,8 @@ test_get_version_stable_release_2() {
 # old_tag:
 # result: 0.4.0-1
 test_get_version_stable_release_3() {
-    result=$(run_fixture stable_release_3)
-    assertEquals 0.4.0-1 "$result"
+  result=$(run_fixture stable_release_3)
+  assertEquals 0.4.0-1 "$result"
 }
 
 # file_version:
@@ -51,8 +51,8 @@ test_get_version_stable_release_3() {
 # old_tag:
 # result: 0.4.0-1
 test_get_version_stable_release_4() {
-    result=$(run_fixture stable_release_4)
-    assertEquals 0.4.0-1 "$result"
+  result=$(run_fixture stable_release_4)
+  assertEquals 0.4.0-1 "$result"
 }
 
 # file_version: v0.4.0
@@ -60,15 +60,15 @@ test_get_version_stable_release_4() {
 # old_tag: v0.4.0
 # result: 0.4.0+20140605182630.git.dce2afc-1
 test_get_version_post_release_1() {
-    result=$(run_fixture post_release_1)
-    case "$result" in
-        0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture post_release_1)
+  case "$result" in
+    0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version:
@@ -76,15 +76,15 @@ test_get_version_post_release_1() {
 # old_tag: v0.4.0
 # result: 0.4.0+20140605182630.git.dce2afc-1
 test_get_version_post_release_2() {
-    result=$(run_fixture post_release_2)
-    case "$result" in
-        0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture post_release_2)
+  case "$result" in
+    0.4.0+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -92,15 +92,15 @@ test_get_version_post_release_2() {
 # old_tag: v0.3.2
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_1() {
-    result=$(run_fixture pre_release_1)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_1)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -108,15 +108,15 @@ test_get_version_pre_release_1() {
 # old_tag: v0.4.0-beta3
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_2() {
-    result=$(run_fixture pre_release_2)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_2)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -124,15 +124,15 @@ test_get_version_pre_release_2() {
 # old_tag:
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_3() {
-    result=$(run_fixture pre_release_3)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_3)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -140,15 +140,15 @@ test_get_version_pre_release_3() {
 # old_tag:
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_4() {
-    result=$(run_fixture pre_release_4)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_4)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -156,15 +156,15 @@ test_get_version_pre_release_4() {
 # old_tag:
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_4() {
-    result=$(run_fixture pre_release_4)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_4)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.4.0
@@ -172,15 +172,15 @@ test_get_version_pre_release_4() {
 # old_tag:
 # result: 0.4.0~20140605182630.git.dce2afc-1
 test_get_version_pre_release_5() {
-    result=$(run_fixture pre_release_5)
-    case "$result" in
-        0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_5)
+  case "$result" in
+    0.4.0~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # file_version: v0.6~dev
@@ -188,15 +188,15 @@ test_get_version_pre_release_5() {
 # old_tag:
 # result: 0.6~20140605182630.git.dce2afc-1
 test_get_version_pre_release_6() {
-    result=$(run_fixture pre_release_6)
-    case "$result" in
-        0.6~dev~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
-            assertEquals 1 1
-            ;;
-        *)
-            assertEquals 1 0
-            ;;
-    esac
+  result=$(run_fixture pre_release_6)
+  case "$result" in
+    0.6~dev~[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].git.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-1)
+      assertEquals 1 1
+      ;;
+    *)
+      assertEquals 1 0
+      ;;
+  esac
 }
 
 # XXX: v0.4.0beta3
@@ -204,7 +204,7 @@ test_get_version_pre_release_6() {
 
 oneTimeSetUp()
 {
-    . "$PROGDIR"/../lib/helpers
+  . "$PROGDIR"/../lib/helpers
 }
 
 . "$PROGDIR"/../vendor/shunit2
