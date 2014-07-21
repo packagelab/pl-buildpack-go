@@ -49,7 +49,7 @@ urlfor() {
 }
 
 split_on_sep_left() {
-  local s="$1"
+  local tag="$1"
   local sep="$2"
 
   case "$tag" in
@@ -66,7 +66,7 @@ split_on_sep_left() {
 }
 
 split_on_sep_right() {
-  local s="$1"
+  local tag="$1"
   local sep="$2"
 
   case "$tag" in
@@ -120,122 +120,89 @@ get_version() {
   cd $build >/dev/null 2>&1
 
   commit=$(git show --format='format:%h' | head -n1)
-  tag=$(git describe --tags --exact-match --match 'v[0-9]*' $commit 2>/dev/null)
+
+  tag=$(git describe --tags --exact-match --match 'v[0-9]*' --abbrev=0 $commit 2>/dev/null)
+  tag_revision=$(split_on_sep_left "$tag" '-' | sed 's/^v//')
+  tag_release=$(split_on_sep_right "$tag" '-')
+
+  old_tag=$(git describe --tags --match 'v[0-9]*' --abbrev=0 $commit 2>/dev/null || :)
+  old_tag_revision=$(split_on_sep_left "$old_tag" '-' | sed 's/^v//')
+  old_tag_release=$(split_on_sep_right "$old_tag" '-')
+
+  file_version_tag=$(git tag -l v$file_version)
   extra=$(date +%Y%m%d%H%M%S).git.$commit
-  case "$tag" in
-    '')
-      # Look for old tag
-      tag=$(git describe --tags --match 'v[0-9]*' --abbrev=0 $commit 2>/dev/null || :)
-      case "$tag" in
-        '')
-          case "$file_version" in
-            '')
-              # post-release
-              revision=0.0~$extra
-              release=1
-              ;;
-            *)
-              # exact-release
-              revision=$file_version
-              release=1
-              ;;
-          esac
-          ;;
-        *)
-          tag_revision=$(split_on_sep_left "$tag" '-')
-          tag_release=$(split_on_sep_right "$tag" '-')
-          case "$file_version" in
-            '')
-              revision=$(echo $tag_revision | sed 's/^v//')+$extra
-              release=1
-              ;;
-            *)
-              case "$tag_revision" in
-                v"$file_version")
-                  case "$tag_release" in
-                    [a-zA-Z]*)
-                      # pre-release
-                      revision=$file_version~$extra
-                      release=1
-                      ;;
-                    *)
-                      # post-release
-                      revision=$file_version+$extra
-                      release=1
-                      ;;
-                  esac
-                  ;;
-                *)
-                  case "$(git tag -l v$file_version)" in
-                    '')
-                      # pre-release
-                      revision=$file_version~$extra
-                      release=1                            
-                      ;;
-                    *)
-                      # post-release
-                      revision=$file_version+$extra
-                      release=1
-                      ;;
-                  esac
-                  ;;
-              esac
-              ;;
-          esac
-          ;;
-      esac
-      ;;
-    *)
-      # Tagged commit
-      tag_revision=$(split_on_sep_left "$tag" '-')
-      tag_release=$(split_on_sep_right "$tag" '-')
-      case "$file_version" in
-        '')
-          revision=$(echo $tag_revision | sed 's/^v//')
-          case "$tag_release" in
-            '')
-              release=1
-              ;; 
-            *)
-              release=$tag_release
-              ;;
-          esac
-          ;;
-        *)
-          case "$tag_revision" in
-            v"$file_version")
-              case "$tag_release" in
-                [a-zA-Z]*)
-                  # pre-release
-                  revision=$file_version~$extra
-                  release=1
-                  ;;
-                *)
-                  # exact-release
-                  revision=$file_version
-                  release=1
-                  ;;
-              esac
-              ;;
-            *)
-              case "$(git tag -l v$file_version)" in
-                '')
-                  # pre-release
-                  revision=$file_version~$extra
-                  release=1
-                  ;;
-                *)
-                  # post-release
-                  revision=$file_version+$extra
-                  release=1
-                  ;;
-              esac
-              ;;
-          esac
-          ;;
-      esac
-      ;;
-  esac
+
+  if [ -z "$tag" -a -z "$old_tag" -a -z "$file_version" ]
+  then
+    # post-release
+    revision=0.0~$extra
+    release=1
+  elif [ -z "$tag" -a -z "$old_tag" -a -n "$file_version" ]
+  then
+    # exact-release
+    revision=$file_version
+    release=1
+  elif [ -z "$tag" -a -n "$old_tag" -a -z "$file_version" ]
+  then
+    revision=$(echo $old_tag_revision | sed 's/^v//')+$extra
+    release=1
+  elif [ -z "$tag" -a -n "$old_tag" -a "$file_version" = "$old_tag_revision" ]
+  then
+    case "$old_tag_release" in
+      [a-zA-Z]*)
+        # pre-release
+        revision=$file_version~$extra
+        release=1
+        ;;
+      *)
+        # post-release
+        revision=$file_version+$extra
+        release=1
+        ;;
+    esac
+  elif [ -z "$tag" -a -n "$old_tag" -a -z "$file_version_tag" ]
+  then
+    # pre-release
+    revision=$file_version~$extra
+    release=1
+  elif [ -z "$tag" -a -n "$old_tag" ]
+  then
+    # post-release
+    revision=$file_version+$extra
+    release=1
+  elif [ -n "$tag" -a -z "$file_version" -a -z "$tag_release" ]
+  then
+    revision=$tag_revision
+    release=1
+  elif [ -n "$tag" -a -z "$file_version" ]
+  then
+    revision=$tag_revision
+    release=$tag_release
+  elif [ -n "$tag" -a "$file_version" = "$tag_revision" ]
+  then
+    case "$tag_release" in
+      [a-zA-Z]*)
+        # pre-release
+        revision=$file_version~$extra
+        release=1
+        ;;
+      *)
+        # exact-release
+        revision=$file_version
+        release=1
+        ;;
+    esac
+  elif [ -n "$tag" -a -z "$file_version_tag" ]
+  then
+    # pre-release
+    revision=$file_version~$extra
+    release=1
+  elif [ -n "$tag" ]
+  then
+    # post-release
+    revision=$file_version+$extra
+    release=1
+  fi
   
   echo "$revision-$release"
 
