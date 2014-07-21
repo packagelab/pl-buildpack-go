@@ -179,32 +179,47 @@ get_version() {
             # Tagged commit
             tag_revision=$(split_on_sep_left "$tag" '-')
             tag_release=$(split_on_sep_right "$tag" '-')
-            case "$tag_revision" in
-                v"$file_version")
+            case "$file_version" in
+                '')
+                    revision=$(echo $tag_revision | sed 's/^v//')
                     case "$tag_release" in
-                        [a-zA-Z]*)
-                            # pre-release
-                            revision=$file_version~$extra
+                        '')
                             release=1
-                            ;;
+                            ;; 
                         *)
-                            # exact-release
-                            revision=$file_version
-                            release=1
+                            release=$tag_release
                             ;;
                     esac
                     ;;
                 *)
-                    case "$(git tag -l v$file_version)" in
-                        '')
-                            # pre-release
-                            revision=$file_version~$extra
-                            release=1                            
+                    case "$tag_revision" in
+                        v"$file_version")
+                            case "$tag_release" in
+                                [a-zA-Z]*)
+                                    # pre-release
+                                    revision=$file_version~$extra
+                                    release=1
+                                    ;;
+                                *)
+                                    # exact-release
+                                    revision=$file_version
+                                    release=1
+                                    ;;
+                            esac
                             ;;
                         *)
-                            # post-release
-                            revision=$file_version+$extra
-                            release=1
+                            case "$(git tag -l v$file_version)" in
+                                '')
+                                    # pre-release
+                                    revision=$file_version~$extra
+                                    release=1
+                                    ;;
+                                *)
+                                    # post-release
+                                    revision=$file_version+$extra
+                                    release=1
+                                    ;;
+                            esac
                             ;;
                     esac
                     ;;
