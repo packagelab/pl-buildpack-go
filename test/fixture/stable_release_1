@@ -20,4 +20,4 @@ main() {
 EOT
 }
 
-main "$@"
+[[ "$0" == "$BASH_SOURCE" ]] && main "$@"

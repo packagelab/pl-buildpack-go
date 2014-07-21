@@ -192,4 +192,4 @@ EOT
   rm -rf "$tempdir"
 }
 
-main "$@"
+[[ "$0" == "$BASH_SOURCE" ]] && main "$@"
