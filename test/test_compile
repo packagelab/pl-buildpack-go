@@ -204,7 +204,7 @@ test_get_version_pre_release_6() {
 
 oneTimeSetUp()
 {
-  . "$PROGDIR"/../lib/helpers
+  . "$PROGDIR"/../bin/compile
 }
 
 . "$PROGDIR"/../vendor/shunit2

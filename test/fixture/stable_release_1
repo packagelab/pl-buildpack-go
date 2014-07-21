@@ -20,4 +20,6 @@ main() {
 EOT
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && main "$@"
+case "$0" in
+  "$BASH_SOURCE") main "$@";;
+esac

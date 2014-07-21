@@ -5,15 +5,241 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# globals
-readonly PROGNAME=$(basename $0)
-readonly PROGDIR=$(dirname $0)
-readonly ARGS="$@"
-
-. "$PROGDIR"/../lib/helpers
-
 usage() {
-  echo "$PROGNAME: usage: $PROGNAME BUILD_DIR CACHE_DIR"
+  echo "compile: usage: compile BUILD_DIR CACHE_DIR"
+}
+
+indent() {
+  local c='s/^/       /'
+  case $(uname) in
+    # mac/bsd sed: -l buffers on line boundaries
+    Darwin) sed -l "$c";;
+    # unix/gnu sed: -u unbuffered (arbitrary) chunks of data
+    *) sed -u "$c";;
+  esac
+}
+
+platext() {
+  local plat="$1"
+
+  case "$plat" in
+    go1.0*|go1.1|go1.1.*) return;;
+  esac
+  case $(uname | tr A-Z a-z) in
+    darwin) printf %s -osx10.8;;
+  esac
+}
+
+# Go packages have moved to a new URL scheme
+# starting with Go version 1.2.2. Return the old
+# location for known old versions and the new
+# location otherwise.
+urlfor() {
+  local ver=$1
+  local file=$2
+
+  case $ver in
+    go1.0*|go1.1beta*|go1.1rc*|go1.1|go1.1.*|go1.2beta*|go1.2rc*|go1.2|go1.2.1)
+      echo http://go.googlecode.com/files/$file
+      ;;
+    *)
+      echo https://storage.googleapis.com/golang/$file
+      ;;
+  esac
+}
+
+split_on_sep_left() {
+  local s="$1"
+  local sep="$2"
+
+  case "$tag" in
+    *"$sep"*)
+      left=${tag%%"$sep"*}
+      right=${tag#*"$sep"}
+      ;;
+    *)
+      left="$tag"
+      right=
+      ;;
+  esac
+  echo "$left"
+}
+
+split_on_sep_right() {
+  local s="$1"
+  local sep="$2"
+
+  case "$tag" in
+    *"$sep"*)
+      left=${tag%%"$sep"*}
+      right=${tag#*"$sep"}
+      ;;
+    *)
+      left="$tag"
+      right=
+      ;;
+  esac
+  echo "$right"
+}
+
+get_version_or_default() {
+  local file_version="$1"
+
+  case "$file_version" in
+    '') echo "0.0.1-1";;
+    *) echo $file_version-1;;
+  esac
+}
+
+get_version() {
+  local build="$1"
+  local file_version
+  local commit
+  local tag
+  local extra
+  local tag_revision
+  local tag_release
+  local revision
+  local release
+
+  case "$(find $build -name 'version.go' -not -path './Godeps/*' -type f)" in
+    '')
+      file_version=
+      ;;
+    *)
+      file_version=$(find $build -name 'version.go' -not -path './Godeps/*' -type f -exec grep 'const Version =' '{}' ';' | sed -e 's/^[^"]*"//' -e 's/"$//' | head -n1)
+      ;;
+  esac
+
+  if [ ! -d $build/.git ]
+  then
+    echo $(get_version_or_default "$file_version")
+    return
+  fi
+
+  cd $build >/dev/null 2>&1
+
+  commit=$(git show --format='format:%h' | head -n1)
+  tag=$(git describe --tags --exact-match --match 'v[0-9]*' $commit 2>/dev/null)
+  extra=$(date +%Y%m%d%H%M%S).git.$commit
+  case "$tag" in
+    '')
+      # Look for old tag
+      tag=$(git describe --tags --match 'v[0-9]*' --abbrev=0 $commit 2>/dev/null || :)
+      case "$tag" in
+        '')
+          case "$file_version" in
+            '')
+              # post-release
+              revision=0.0~$extra
+              release=1
+              ;;
+            *)
+              # exact-release
+              revision=$file_version
+              release=1
+              ;;
+          esac
+          ;;
+        *)
+          tag_revision=$(split_on_sep_left "$tag" '-')
+          tag_release=$(split_on_sep_right "$tag" '-')
+          case "$file_version" in
+            '')
+              revision=$(echo $tag_revision | sed 's/^v//')+$extra
+              release=1
+              ;;
+            *)
+              case "$tag_revision" in
+                v"$file_version")
+                  case "$tag_release" in
+                    [a-zA-Z]*)
+                      # pre-release
+                      revision=$file_version~$extra
+                      release=1
+                      ;;
+                    *)
+                      # post-release
+                      revision=$file_version+$extra
+                      release=1
+                      ;;
+                  esac
+                  ;;
+                *)
+                  case "$(git tag -l v$file_version)" in
+                    '')
+                      # pre-release
+                      revision=$file_version~$extra
+                      release=1                            
+                      ;;
+                    *)
+                      # post-release
+                      revision=$file_version+$extra
+                      release=1
+                      ;;
+                  esac
+                  ;;
+              esac
+              ;;
+          esac
+          ;;
+      esac
+      ;;
+    *)
+      # Tagged commit
+      tag_revision=$(split_on_sep_left "$tag" '-')
+      tag_release=$(split_on_sep_right "$tag" '-')
+      case "$file_version" in
+        '')
+          revision=$(echo $tag_revision | sed 's/^v//')
+          case "$tag_release" in
+            '')
+              release=1
+              ;; 
+            *)
+              release=$tag_release
+              ;;
+          esac
+          ;;
+        *)
+          case "$tag_revision" in
+            v"$file_version")
+              case "$tag_release" in
+                [a-zA-Z]*)
+                  # pre-release
+                  revision=$file_version~$extra
+                  release=1
+                  ;;
+                *)
+                  # exact-release
+                  revision=$file_version
+                  release=1
+                  ;;
+              esac
+              ;;
+            *)
+              case "$(git tag -l v$file_version)" in
+                '')
+                  # pre-release
+                  revision=$file_version~$extra
+                  release=1
+                  ;;
+                *)
+                  # post-release
+                  revision=$file_version+$extra
+                  release=1
+                  ;;
+              esac
+              ;;
+          esac
+          ;;
+      esac
+      ;;
+  esac
+  
+  echo "$revision-$release"
+
+  cd - >/dev/null 2>&1
 }
 
 install_tool() {
@@ -192,4 +418,6 @@ EOT
   rm -rf "$tempdir"
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && main "$@"
+case "$0" in
+  "$BASH_SOURCE") main "$@";;
+esac

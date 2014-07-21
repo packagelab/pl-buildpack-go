@@ -27,4 +27,6 @@ EOT
   cd - >/dev/null 2>&1
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && main "$@"
+case "$0" in
+  "$BASH_SOURCE") main "$@";;
+esac
