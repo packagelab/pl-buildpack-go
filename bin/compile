@@ -273,20 +273,22 @@ main() {
   esac
   plat=$(uname | tr A-Z a-z)-$arch
 
-  install_tool "$cache" "$plat" godep
-  install_tool "$cache" "$plat" jq
-
   export PATH=$cache/$plat/bin:$PATH
 
   if test -f $build/Godeps
   then
+    install_tool "$cache" "$plat" godep
+    install_tool "$cache" "$plat" jq
     name=$(<$build/Godeps jq -r .ImportPath)
     ver=$(<$build/Godeps jq -r .GoVersion)
   elif test -d $build/Godeps
   then
+    install_tool "$cache" "$plat" godep
+    install_tool "$cache" "$plat" jq
     name=$(<$build/Godeps/Godeps.json jq -r .ImportPath)
     ver=$(<$build/Godeps/Godeps.json jq -r .GoVersion)
   elif test -f $build/Gomfile
+    install_tool "$cache" "$plat" gom
   then
     # XXX: Hack to get the name from the man page
     name=$(basename $(basename man/*.1 .1))
